@@ -37,32 +37,28 @@ private:
 
 				while (this->ser.get_read_avail() > 0) {
 					unsigned char in = this->ser.read_byte();
-					printf("%d\n", in);
 
 					if (in == this->start && !started) {
-						printf("A\n");
 						started = true;
 						continue;
 					}
 
 					if (started) {
 						if (finding_len > 0) {
-							printf("B\n");
 							finding_len--;
 							buffer_len += in << ((3 - finding_len) * 8);
 						} else if (buffer_len > 0) {
-							printf("C\n");
 							buffer[ptr] = in;
 							buffer_len--;
 							ptr++;
-						} else {
-							printf("D\n");
+						}
+
+						if (finding_len == 0 && buffer_len == 0) {
 							PacketT new_packet;
 							new_packet.deserialize(buffer);
 
 							this->queue_mtx.take();
 							this->packet_q.push(new_packet);
-							printf("%d\n", this->packet_q.size());
 							this->queue_mtx.give();
 
 							started = false;

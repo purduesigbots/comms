@@ -59,7 +59,7 @@ struct Packet : comms::Serializable, comms::Deserializable {
 	void deserialize(unsigned char* data) {
 		this->data_int = 0;
 		for (int i = 0; i < sizeof(data_int); i++) {
-			data_int += (data[i] << (i * 8));
+			data_int |= (data[i] << (i * 8));
 		}
 	}
 };
@@ -78,31 +78,31 @@ struct Packet : comms::Serializable, comms::Deserializable {
  * restart the task, not resume it from where it left off.
  */
 void opcontrol() {
+	pros::Controller primary(CONTROLLER_MASTER);
 	Packet outbound;
-	outbound.data_int = -1102938091;
+	outbound.data_int = 1000;
 
-	comms::ReceiveComms<Packet> rx(9, 9600, '!');
-	comms::SendComms<Packet> tx(19, 9600, '!');
+	comms::ReceiveComms<Packet> rx(9, 115200, '#');
+	comms::SendComms<Packet> tx(19, 115200, '#');
 
 	rx.begin();
 
 	bool sending = false;
+	pros::lcd::clear_line(1);
 
 	while (true) {
 
 		if (!sending) {
 			if (rx.has_data()) {
 				auto inbound = rx.get_data();
-				pros::lcd::clear_line(1);
 				pros::lcd::print(1, "inbound data_int: %d", inbound.data_int);
-			} else {
-				pros::lcd::clear_line(1);
-				pros::lcd::print(1, "no data");
 			}
 		} else {
-			pros::lcd::clear_line(1);
 			pros::lcd::print(1, "outbound data_int: %d", outbound.data_int);
-			tx.send_data(outbound);
+			if (primary.get_digital_new_press(DIGITAL_A)) {
+				outbound.data_int = pros::millis();
+				tx.send_data(outbound);
+			}
 		}
 
 		pros::delay(10);

@@ -24,19 +24,21 @@ public:
 		unsigned char buffer[MAX_BUFFER_SIZE];
 		int buffer_len = packet.serialize(buffer);
 
+		this->ser.flush();
+
+		this->ser.write_byte(0);
+		this->ser.write_byte(0);
+		this->ser.write_byte(0);
 		this->ser.write_byte(this->start);
-		printf("%d\n", this->start);
 
 		for (int i = 0; i < sizeof(buffer_len); i++) {
 			unsigned char c = (buffer_len & (0xFF << (i * 8))) >> (i * 8);
 			this->ser.write_byte(c);
-			printf("%d\n", c);
 		}
 
 		for (int i = 0; i < buffer_len; i++) {
 			unsigned char c = buffer[i];
 			this->ser.write_byte(c);
-			printf("%d\n", c);
 		}
 	}
 };
